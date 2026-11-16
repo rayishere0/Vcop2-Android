@@ -93,7 +93,17 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Load native libraries first before super.onCreate
+        loadLibraries();
+
+        try {
+            super.onCreate(savedInstanceState);
+        } catch (UnsatisfiedLinkError e) {
+            Log.e(TAG, "Native method call failed in super.onCreate: " + e.getMessage());
+            if (!mMissingLibraries.contains("libSDL2.so")) {
+                mMissingLibraries.add("libSDL2.so");
+            }
+        }
 
         // Check if any native libraries failed to load
         if (!mMissingLibraries.isEmpty()) {
