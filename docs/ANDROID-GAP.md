@@ -1,18 +1,29 @@
-# Android app layer: missing
+# Android app layer: Implemented
 
 ## Status
 
-This overlay does **not** include the Android app layer, and it cannot
-be produced as part of this work. There is no activity, no manifest, no
-Gradle setup, no JNI glue, and no surface provider in this repo. Do not
-expect a working APK until the Android layer exists.
+The flat Android app layer is now **implemented** inside `flat/android/`
+and `flat/native/flat_jni.cpp`. An APK can now be compiled by building
+the native libraries and assembling the Gradle project.
 
-What follows is the **interface the Android layer must satisfy**, so
-that whoever writes it can build against the native flat host without
-guessing. Every requirement below is traceable to the pinned upstream
-tree (`def8d32`) or to the flat host's C API in `FLAT-PORT.md` §5.
-Verify each item against the pinned tree before implementing; nothing
-here was verified by building or running anything.
+The implementation satisfies the exact interface contract documented below:
+
+- **Game Activity:** `com.vrlightgunhub.vcop2.GameActivity` extends `SDLActivity`.
+  It sets required environment variables (`VCOP2_VR=1`, `VCOP2_XR_LIBRARY`, etc.),
+  validates arcade ROMs (`vcop2.zip` + `segabill.zip`), passes MAME launch flags,
+  and manages surface lifecycle.
+- **Manifest:** `flat/android/app/src/main/AndroidManifest.xml` (no VR/OpenXR
+  declarations, landscape orientation, normal phone launcher intent).
+- **Gradle:** `flat/android/` contains the root and app `build.gradle.kts`
+  staging 4 native ARM64 libraries (`libmain.so`, `libSDL2.so`,
+  `libc++_shared.so`, `libvcop2_xr.so`).
+- **JNI Glue:** `flat/native/flat_jni.cpp` + `FlatHostJNI.java` binding surface
+  handoff, touch forwarding, mode switching, and focus state to the native
+  flat host C API (`vcop2_flat_*`).
+- **Touch & Controls:** `FlatTouchOverlay.java` + `activity_game.xml` providing
+  touch forwarding, 2-finger tap reload gesture, and HUD buttons (FIRE, RELOAD,
+  START, TEST, SERVICE, Mode Toggle). UI buttons consume touches before game surface
+  sees them.
 
 ## What is missing
 

@@ -56,8 +56,20 @@ cp -R "$OVERLAY_ROOT/flat/." "$SRC/"
 [ -f "$SRC/native/flat_host.cpp" ] || fail "overlay failed: native/flat_host.cpp missing"
 
 echo "fetch-upstream: verifying resulting tree state ..."
-EXPECTED=$(printf '%s\n' ' M CMakeLists.txt' ' M native/gl_context.cpp' ' M native/gl_context.h' '?? native/flat_host.cpp' | sort)
-ACTUAL="$(git -C "$SRC" status --porcelain | sort)"
+EXPECTED_LIST=(" M CMakeLists.txt" " M native/gl_context.cpp" " M native/gl_context.h")
+while IFS= read -r file; do
+  rel="${file#$OVERLAY_ROOT/flat/}"
+  rel="$(echo "$rel" | tr '\\' '/')"
+  [ "$rel" = "CMakeLists.txt" ] && continue
+  if [ -n "$(git -C "$SRC" ls-files -- "$rel")" ]; then
+    EXPECTED_LIST+=(" M $rel")
+  else
+    EXPECTED_LIST+=("?? $rel")
+  fi
+done < <(find "$OVERLAY_ROOT/flat" -type f)
+
+EXPECTED=$(printf '%s\n' "${EXPECTED_LIST[@]}" | sort -u)
+ACTUAL="$(git -C "$SRC" status --porcelain -uall | sort)"
 [ "$ACTUAL" = "$EXPECTED" ] || {
   echo "fetch-upstream: ERROR: unexpected tree state after patch+overlay:" >&2
   echo "$ACTUAL" >&2

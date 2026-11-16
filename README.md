@@ -18,10 +18,9 @@ this overlay on top. See `docs/FLAT-PORT.md` for the architecture and
   window-surface patch are written but **not compile-checked and not
   device-tested**. No MAME build is possible in the environment that
   produced this overlay.
-- **The Android app layer is missing.** There is no activity, manifest,
-  Gradle setup, or JNI glue in this repo. That work is blocked; see
-  `docs/ANDROID-GAP.md` for the exact interface the Android layer must
-  satisfy. Do not expect a working APK until it exists.
+- **The Android app layer is implemented.** Activity, manifest, Gradle
+  configuration, JNI glue, touch overlay, and surface provider are now
+  provided in `flat/android/` and `flat/native/flat_jni.cpp` (see `docs/ANDROID-GAP.md`).
 - Every unverified claim is marked UNKNOWN in `docs/FLAT-PORT.md` with
   the check that would prove it.
 

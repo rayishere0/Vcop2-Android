@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(vcop2_xr SHARED
   native/flat_host.cpp
+  native/flat_jni.cpp
   native/gl_scene.cpp
   native/gl_context.cpp
   vendor/glad/src/gl.c)

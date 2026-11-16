@@ -2,10 +2,8 @@
 
 Adapted from upstream `docs/BUILD.md` and `tools/build-quest.ps1` /
 `tools/build-engine.ps1` for the flat target. All upstream citations
-are against the pinned commit `def8d32`. **This build has never been
-run.** The Android app layer is missing (`ANDROID-GAP.md`), so the
-Gradle step cannot complete until it exists. Every step below that
-depends on it is marked BLOCKED.
+are against the pinned commit `def8d32`. The flat Android app layer
+is now provided in `flat/android/` and `flat/native/flat_jni.cpp`.
 
 **No build-weight evidence exists.** Upstream states no build duration,
 disk usage, RAM, or object count anywhere. Do not guess timings. The

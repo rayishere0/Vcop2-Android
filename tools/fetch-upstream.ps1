@@ -88,8 +88,23 @@ if (-not (Test-Path (Join-Path $Src 'native\flat_host.cpp'))) {
 }
 
 Write-Host 'fetch-upstream: verifying resulting tree state ...'
-$actual = @(& git -C $Src status --porcelain | Sort-Object)
-$expected = @(' M CMakeLists.txt', ' M native/gl_context.cpp', ' M native/gl_context.h', '?? native/flat_host.cpp') | Sort-Object
+$expectedList = [System.Collections.Generic.List[string]]::new()
+$expectedList.Add(' M CMakeLists.txt')
+$expectedList.Add(' M native/gl_context.cpp')
+$expectedList.Add(' M native/gl_context.h')
+
+Get-ChildItem -Recurse -File $flatRoot | ForEach-Object {
+    $rel = $_.FullName.Substring($flatRoot.Length + 1).Replace('\', '/')
+    if ($rel -eq 'CMakeLists.txt') { return }
+    $trackedFiles = & git -C $Src ls-files -- $rel
+    if ($trackedFiles) {
+        $expectedList.Add(" M $rel")
+    } else {
+        $expectedList.Add("?? $rel")
+    }
+}
+$expected = $expectedList | Sort-Object -Unique
+$actual = @(& git -C $Src status --porcelain -uall | Sort-Object)
 $diff = Compare-Object $actual $expected
 if ($diff) {
     Write-Host 'fetch-upstream: ERROR: unexpected tree state after patch+overlay:'
