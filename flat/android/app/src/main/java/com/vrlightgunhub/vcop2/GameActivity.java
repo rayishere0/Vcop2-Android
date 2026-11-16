@@ -34,6 +34,8 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
     private Button mBtnService;
     private Button mBtnModeToggle;
     private int mTouchMode = 0; // default: tap-to-shoot
+    private AlertDialog mRomErrorDialog;
+    private final List<String> mMissingLibraries = new ArrayList<>();
 
     @Override
     protected String[] getLibraries() {
@@ -42,6 +44,19 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
             "vcop2_xr",
             "main"
         };
+    }
+
+    @Override
+    public void loadLibraries() {
+        mMissingLibraries.clear();
+        for (String lib : getLibraries()) {
+            try {
+                System.loadLibrary(lib);
+            } catch (UnsatisfiedLinkError e) {
+                Log.e(TAG, "Failed to load library " + lib + ": " + e.getMessage());
+                mMissingLibraries.add("lib" + lib + ".so");
+            }
+        }
     }
 
     @Override
@@ -78,6 +93,28 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Check if any native libraries failed to load
+        if (!mMissingLibraries.isEmpty()) {
+            StringBuilder missingStr = new StringBuilder();
+            for (String lib : mMissingLibraries) {
+                if (missingStr.length() > 0) missingStr.append(", ");
+                missingStr.append(lib);
+            }
+            Log.e(TAG, "Missing native libraries: " + missingStr);
+            mRomErrorDialog = new AlertDialog.Builder(this)
+                .setTitle("Native Libraries Required")
+                .setMessage("The following native libraries were not found in the APK:\n\n" + missingStr + "\n\nPlease compile MAME and SDL2 libraries according to docs/BUILD.md and place them in jniLibs/arm64-v8a/.")
+                .setPositiveButton("OK", (dialog, which) -> {
+                    dialog.dismiss();
+                    finish();
+                })
+                .setCancelable(false)
+                .show();
+            return;
+        }
+
         // Set environment variables required by engine & host before SDLActivity initializes native libraries
         File filesDir = getFilesDir();
         String nativeLibDir = getApplicationInfo().nativeLibraryDir;
@@ -95,15 +132,17 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
         GameFiles.ValidationResult romCheck = GameFiles.validateRoms();
         if (!romCheck.valid) {
             Log.e(TAG, "ROM validation failed: " + romCheck.errorMessage);
-            new AlertDialog.Builder(this)
+            mRomErrorDialog = new AlertDialog.Builder(this)
                 .setTitle("ROM Files Required")
                 .setMessage(romCheck.errorMessage)
-                .setPositiveButton("OK", (dialog, which) -> finish())
+                .setPositiveButton("OK", (dialog, which) -> {
+                    dialog.dismiss();
+                    finish();
+                })
                 .setCancelable(false)
                 .show();
+            return;
         }
-
-        super.onCreate(savedInstanceState);
 
         // Load persisted touch mode preference
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -242,6 +281,15 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
     protected void onResume() {
         super.onResume();
         FlatHostJNI.nativeSetMenuOpen(0);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mRomErrorDialog != null && mRomErrorDialog.isShowing()) {
+            mRomErrorDialog.dismiss();
+            mRomErrorDialog = null;
+        }
+        super.onDestroy();
     }
 
     // Native environment helper fallback
