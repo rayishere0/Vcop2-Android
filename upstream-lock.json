@@ -1,0 +1,25 @@
+{
+    "mame": {
+        "commit": "f34f02505e32c1993c6a782b6814232cbfc74e36",
+        "repository": "https://github.com/mamedev/mame.git",
+        "sources": "src/mame/sega/model2.cpp",
+        "subtarget": "vcop2",
+        "tag": "mame0289"
+    },
+    "notes": [
+        "OpenXR is intentionally absent: the flat build does not use it.",
+        "The vcop2-vr commit above is the only upstream revision the patches in patches/ are verified against. Never bump it without re-verifying every patch with git apply --check on a fresh clone.",
+        "The mame pin is copied verbatim from upstream engine-lock.json."
+    ],
+    "sdl": {
+        "commit": null,
+        "note": "UNKNOWN: upstream names SDL 2.33.0 development source but pins no URL or commit in the repo. Do not invent one; see docs/BUILD.md.",
+        "repository": null,
+        "version": "2.33.0"
+    },
+    "vcop2_vr": {
+        "commit": "def8d32914911d03c9c8d24680bf21b3f869524c",
+        "repository": "https://github.com/vr4all-standalone/vcop2-vr",
+        "tag": "v0.2.15"
+    }
+}

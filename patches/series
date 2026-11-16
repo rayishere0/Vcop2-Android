@@ -1,0 +1,3 @@
+# Patch series for the flat overlay. Applied in order by tools/fetch-upstream.* against
+# vcop2-vr def8d32914911d03c9c8d24680bf21b3f869524c (v0.2.15). Lines starting with # are comments.
+0001-flat-gl-window-surface.patch

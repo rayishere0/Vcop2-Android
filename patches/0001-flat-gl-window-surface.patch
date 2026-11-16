@@ -1,0 +1,86 @@
+# 0001-flat-gl-window-surface.patch
+# Purpose: add an EGL window-surface path to GLContext (window ctor, surface() accessor, make_current(), swap_buffers()) so the flat host can present to a phone window. The pbuffer constructor is unchanged.
+# Base: vcop2-vr def8d32914911d03c9c8d24680bf21b3f869524c (v0.2.15). Generated from a real edit via git diff; do not hand-edit.
+
+diff --git a/native/gl_context.cpp b/native/gl_context.cpp
+index a8113d3..d4b0348 100644
+--- a/native/gl_context.cpp
++++ b/native/gl_context.cpp
+@@ -53,6 +53,47 @@ GLContext::GLContext() {
+     if(!gladLoadGLES2(reinterpret_cast<GLADloadfunc>(eglGetProcAddress)))throw std::runtime_error("Cannot load GLES functions");
+ #endif
+ }
++GLContext::GLContext(void* native_window) {
++#ifdef _WIN32
++    (void)native_window;
++    throw std::runtime_error("Window-surface GLContext is Android-only");
++#else
++    // Deliberately mirrors the pbuffer constructor above; the two differences
++    // are the EGL_WINDOW_BIT config and eglCreateWindowSurface. The default
++    // constructor is left untouched so the pbuffer/test path is unchanged.
++    if(!native_window)throw std::runtime_error("GLContext window surface requires a native window");
++    auto display=eglGetDisplay(EGL_DEFAULT_DISPLAY);
++    if(!eglInitialize(display,nullptr,nullptr))throw std::runtime_error("Cannot initialize EGL");
++    EGLint attribs[]={EGL_RENDERABLE_TYPE,EGL_OPENGL_ES3_BIT,EGL_SURFACE_TYPE,EGL_WINDOW_BIT|EGL_PBUFFER_BIT,
++        EGL_RED_SIZE,8,EGL_GREEN_SIZE,8,EGL_BLUE_SIZE,8,EGL_DEPTH_SIZE,24,EGL_NONE};
++    EGLConfig config{};EGLint count{};
++    if(!eglChooseConfig(display,attribs,&config,1,&count)||!count)throw std::runtime_error("No GLES3 EGL config");
++    EGLint ca[]={EGL_CONTEXT_CLIENT_VERSION,3,EGL_NONE};
++    auto context=eglCreateContext(display,config,EGL_NO_CONTEXT,ca);
++    auto surface=eglCreateWindowSurface(display,config,static_cast<EGLNativeWindowType>(native_window),nullptr);
++    if(context==EGL_NO_CONTEXT||surface==EGL_NO_SURFACE||!eglMakeCurrent(display,surface,surface,context))throw std::runtime_error("Cannot create GLES3 window surface");
++    display_=display;surface_=surface;context_=context;config_=config;window_=native_window;window_surface_=true;
++    if(!gladLoadGLES2(reinterpret_cast<GLADloadfunc>(eglGetProcAddress)))throw std::runtime_error("Cannot load GLES functions");
++#endif
++}
++bool GLContext::make_current() {
++#ifdef _WIN32
++    if(!display_||!context_)return false;
++    return wglMakeCurrent(static_cast<HDC>(display_),static_cast<HGLRC>(context_))!=0;
++#else
++    if(!display_||!surface_||!context_)return false;
++    return eglMakeCurrent(display_,surface_,surface_,context_)==EGL_TRUE;
++#endif
++}
++bool GLContext::swap_buffers() {
++#ifdef _WIN32
++    if(!display_)return false;
++    return SwapBuffers(static_cast<HDC>(display_))!=0;
++#else
++    if(!window_surface_||!display_||!surface_)return false;
++    return eglSwapBuffers(display_,surface_)==EGL_TRUE;
++#endif
++}
+ GLContext::~GLContext() {
+ #ifdef _WIN32
+     wglMakeCurrent(nullptr,nullptr);if(context_)wglDeleteContext(static_cast<HGLRC>(context_));
+diff --git a/native/gl_context.h b/native/gl_context.h
+index ab3fed9..aea5ed1 100644
+--- a/native/gl_context.h
++++ b/native/gl_context.h
+@@ -3,11 +3,24 @@
+ namespace vcop2 {
+ class GLContext {
+     void* display_{};void* surface_{};void* context_{};void* window_{};void* config_{};
++    bool window_surface_{};
+ public:
+-    GLContext();~GLContext();
++    GLContext();
++    // Window-surface context (flat host): native_window is an ANativeWindow*
++    // on Android. The caller keeps owning the native window; this class only
++    // creates/destroys the EGL surface. Throws std::runtime_error on failure.
++    explicit GLContext(void* native_window);
++    ~GLContext();
+     GLContext(const GLContext&)=delete;
+     void* display() const{return display_;}
++    void* surface() const{return surface_;}
+     void* context() const{return context_;}
+     void* config() const{return config_;}
++    bool window_surface() const{return window_surface_;}
++    // Rebind this context + surface on the calling thread. Returns false
++    // when there is no surface to bind (e.g. after surface loss).
++    bool make_current();
++    // Present the window surface. Returns false for pbuffer contexts.
++    bool swap_buffers();
+ };
+ }
