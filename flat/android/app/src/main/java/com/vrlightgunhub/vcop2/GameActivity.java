@@ -55,7 +55,13 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
             } catch (UnsatisfiedLinkError e) {
                 Log.e(TAG, "Failed to load library " + lib + ": " + e.getMessage());
                 mMissingLibraries.add("lib" + lib + ".so");
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to load library " + lib + ": " + t.getMessage());
+                mMissingLibraries.add("lib" + lib + ".so");
             }
+        }
+        if (!mMissingLibraries.isEmpty()) {
+            mBrokenLibraries = true;
         }
     }
 
@@ -100,18 +106,24 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
             super.onCreate(savedInstanceState);
         } catch (UnsatisfiedLinkError e) {
             Log.e(TAG, "Native method call failed in super.onCreate: " + e.getMessage());
+            mBrokenLibraries = true;
             if (!mMissingLibraries.contains("libSDL2.so")) {
                 mMissingLibraries.add("libSDL2.so");
             }
+        } catch (Throwable t) {
+            Log.e(TAG, "Initialization error in super.onCreate: " + t.getMessage());
+            mBrokenLibraries = true;
         }
 
         // Check if any native libraries failed to load
-        if (!mMissingLibraries.isEmpty()) {
+        if (!mMissingLibraries.isEmpty() || mBrokenLibraries) {
+            mBrokenLibraries = true;
             StringBuilder missingStr = new StringBuilder();
             for (String lib : mMissingLibraries) {
                 if (missingStr.length() > 0) missingStr.append(", ");
                 missingStr.append(lib);
             }
+            if (missingStr.length() == 0) missingStr.append("libSDL2.so, libmain.so");
             Log.e(TAG, "Missing native libraries: " + missingStr);
             mRomErrorDialog = new AlertDialog.Builder(this)
                 .setTitle("Native Libraries Required")
@@ -141,6 +153,7 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
         // Validate ROMs before continuing
         GameFiles.ValidationResult romCheck = GameFiles.validateRoms();
         if (!romCheck.valid) {
+            mBrokenLibraries = true;
             Log.e(TAG, "ROM validation failed: " + romCheck.errorMessage);
             mRomErrorDialog = new AlertDialog.Builder(this)
                 .setTitle("ROM Files Required")
@@ -277,20 +290,35 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
+        if (mBrokenLibraries) return;
         super.onWindowFocusChanged(hasFocus);
         FlatHostJNI.nativeSetFocused(hasFocus ? 1 : 0);
     }
 
     @Override
+    protected void onStart() {
+        if (mBrokenLibraries) return;
+        super.onStart();
+    }
+
+    @Override
     protected void onPause() {
+        if (mBrokenLibraries) return;
         super.onPause();
         FlatHostJNI.nativeSetMenuOpen(1);
     }
 
     @Override
     protected void onResume() {
+        if (mBrokenLibraries) return;
         super.onResume();
         FlatHostJNI.nativeSetMenuOpen(0);
+    }
+
+    @Override
+    protected void onStop() {
+        if (mBrokenLibraries) return;
+        super.onStop();
     }
 
     @Override
