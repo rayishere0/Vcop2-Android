@@ -290,34 +290,35 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        if (mBrokenLibraries) return;
         super.onWindowFocusChanged(hasFocus);
-        FlatHostJNI.nativeSetFocused(hasFocus ? 1 : 0);
+        if (!mBrokenLibraries) {
+            FlatHostJNI.nativeSetFocused(hasFocus ? 1 : 0);
+        }
     }
 
     @Override
     protected void onStart() {
-        if (mBrokenLibraries) return;
         super.onStart();
     }
 
     @Override
     protected void onPause() {
-        if (mBrokenLibraries) return;
         super.onPause();
-        FlatHostJNI.nativeSetMenuOpen(1);
+        if (!mBrokenLibraries) {
+            FlatHostJNI.nativeSetMenuOpen(1);
+        }
     }
 
     @Override
     protected void onResume() {
-        if (mBrokenLibraries) return;
         super.onResume();
-        FlatHostJNI.nativeSetMenuOpen(0);
+        if (!mBrokenLibraries) {
+            FlatHostJNI.nativeSetMenuOpen(0);
+        }
     }
 
     @Override
     protected void onStop() {
-        if (mBrokenLibraries) return;
         super.onStop();
     }
 
