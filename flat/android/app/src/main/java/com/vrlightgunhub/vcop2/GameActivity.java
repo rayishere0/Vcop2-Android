@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 package com.vrlightgunhub.vcop2;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -145,6 +152,9 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
         setEnv("VCOP2_XR_LOG", logPath);
         setEnv("VCOP2_ASSETS", filesDir.getAbsolutePath());
 
+        // Ensure storage permissions are granted before validating ROMs
+        requestStoragePermissionIfNeeded();
+
         // Validate ROMs before continuing
         GameFiles.ValidationResult romCheck = GameFiles.validateRoms();
         if (!romCheck.valid) {
@@ -168,6 +178,25 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
         FlatHostJNI.nativeSetTouchMode(mTouchMode);
 
         setupUIOverlays();
+    }
+
+    private void requestStoragePermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 100);
+            }
+        }
     }
 
     private void setEnv(String key, String value) {
