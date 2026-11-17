@@ -1,0 +1,2 @@
+# Ignore compiled native binaries
+*.so

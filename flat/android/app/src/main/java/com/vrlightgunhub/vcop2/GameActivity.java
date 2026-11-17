@@ -99,31 +99,26 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Load native libraries first before super.onCreate
+        // Reset flags & load native libraries first
+        mBrokenLibraries = false;
+        mMissingLibraries.clear();
         loadLibraries();
 
         try {
             super.onCreate(savedInstanceState);
-        } catch (UnsatisfiedLinkError e) {
-            Log.e(TAG, "Native method call failed in super.onCreate: " + e.getMessage());
-            mBrokenLibraries = true;
-            if (!mMissingLibraries.contains("libSDL2.so")) {
-                mMissingLibraries.add("libSDL2.so");
-            }
         } catch (Throwable t) {
-            Log.e(TAG, "Initialization error in super.onCreate: " + t.getMessage());
+            Log.e(TAG, "Initialization error in super.onCreate", t);
             mBrokenLibraries = true;
         }
 
         // Check if any native libraries failed to load
-        if (!mMissingLibraries.isEmpty() || mBrokenLibraries) {
+        if (!mMissingLibraries.isEmpty()) {
             mBrokenLibraries = true;
             StringBuilder missingStr = new StringBuilder();
             for (String lib : mMissingLibraries) {
                 if (missingStr.length() > 0) missingStr.append(", ");
                 missingStr.append(lib);
             }
-            if (missingStr.length() == 0) missingStr.append("libSDL2.so, libmain.so");
             Log.e(TAG, "Missing native libraries: " + missingStr);
             mRomErrorDialog = new AlertDialog.Builder(this)
                 .setTitle("Native Libraries Required")
@@ -137,7 +132,7 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
             return;
         }
 
-        // Set environment variables required by engine & host before SDLActivity initializes native libraries
+        // Set environment variables required by engine & host
         File filesDir = getFilesDir();
         String nativeLibDir = getApplicationInfo().nativeLibraryDir;
         String xrLibPath = new File(nativeLibDir, "libvcop2_xr.so").getAbsolutePath();
