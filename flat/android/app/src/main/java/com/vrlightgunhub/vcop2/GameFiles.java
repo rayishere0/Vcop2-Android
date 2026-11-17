@@ -25,7 +25,7 @@ public class GameFiles {
     };
 
     private static final String[] SEGABILL_ROMS = {
-        "epr-19348.ic8", "epr-19349.ic9", "epr-19350.ic10"
+        "epr-18022.ic2"
     };
 
     public static String getRomPath() {

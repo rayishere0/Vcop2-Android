@@ -94,7 +94,7 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
             "-cfg_directory", cfgDir.getAbsolutePath(),
             "-state_directory", stateDir.getAbsolutePath(),
             "-snapshot_directory", snapshotDir.getAbsolutePath(),
-            "-video", "none",
+            "-video", "soft",
             "-sound", "sdl",
             "-skip_gameinfo",
             "-noreadconfig",
@@ -259,6 +259,18 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
                 Toast.makeText(this, mTouchMode == 1 ? "Aim + Fire Mode" : "Tap-to-Shoot Mode", Toast.LENGTH_SHORT).show();
             });
         }
+
+        // Attach surface callback to SDLSurface to pass ANativeWindow surface pointer to native host
+        if (mSurface != null && mSurface.getHolder() != null) {
+            SurfaceHolder holder = mSurface.getHolder();
+            holder.addCallback(this);
+            if (holder.getSurface() != null && holder.getSurface().isValid()) {
+                int w = holder.getSurfaceFrame().width();
+                int h = holder.getSurfaceFrame().height();
+                Log.i(TAG, "Passing initial surface to native host: " + w + "x" + h);
+                FlatHostJNI.nativeSetSurface(holder.getSurface(), w, h);
+            }
+        }
     }
 
     private void updateTouchModeUI() {
@@ -287,9 +299,10 @@ public class GameActivity extends SDLActivity implements SurfaceHolder.Callback 
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        if (holder.getSurface() != null) {
+        if (holder.getSurface() != null && holder.getSurface().isValid()) {
             int w = holder.getSurfaceFrame().width();
             int h = holder.getSurfaceFrame().height();
+            Log.i(TAG, "surfaceCreated: " + w + "x" + h);
             FlatHostJNI.nativeSetSurface(holder.getSurface(), w, h);
             if (mTouchOverlay != null) {
                 mTouchOverlay.setSurfaceSize(w, h);
