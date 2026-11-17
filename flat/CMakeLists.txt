@@ -22,3 +22,4 @@ add_library(vcop2_xr SHARED
 # which only the dropped VR/presentation sources needed.
 target_include_directories(vcop2_xr PRIVATE native vendor vendor/stb vendor/glad/include vendor/glm)
 target_link_libraries(vcop2_xr PRIVATE EGL GLESv3 android log dl)
+target_link_options(vcop2_xr PRIVATE "-Wl,-z,max-page-size=16384")

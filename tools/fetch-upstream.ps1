@@ -95,7 +95,7 @@ $expectedList.Add(' M native/gl_context.h')
 
 Get-ChildItem -Recurse -File $flatRoot | ForEach-Object {
     $rel = $_.FullName.Substring($flatRoot.Length + 1).Replace('\', '/')
-    if ($rel -eq 'CMakeLists.txt') { return }
+    if ($rel -eq 'CMakeLists.txt' -or $_.Extension -eq '.so') { return }
     $trackedFiles = & git -C $Src ls-files -- $rel
     if ($trackedFiles) {
         $expectedList.Add(" M $rel")

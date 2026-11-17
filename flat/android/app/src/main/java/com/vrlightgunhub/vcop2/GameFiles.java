@@ -14,13 +14,14 @@ public class GameFiles {
 
     // Expected ROM filenames inside vcop2.zip and segabill.zip
     private static final String[] VCOP2_ROMS = {
-        "epr-19234.31", "epr-19235.32", "epr-19236.33", "epr-19237.34",
-        "mpr-19238.1",  "mpr-19239.2",  "mpr-19240.3",  "mpr-19241.4",
-        "epr-19242.7",  "epr-19243.8",  "mpr-19244.5",  "mpr-19245.6",
-        "mpr-19246.17", "mpr-19247.18", "mpr-19248.19", "mpr-19249.20",
-        "mpr-19250.21", "mpr-19251.22", "mpr-19252.23", "mpr-19253.24",
-        "epr-19254.9",  "epr-19255.10", "epr-19256.11", "epr-19257.12",
-        "epr-19258.13", "epr-19259.14", "epr-19260.15", "epr-19261.16"
+        "epr-18518.14", "epr-18519.15", "epr-18524.12", "epr-18525.13",
+        "epr-18530.30", "epr-18520.4",  "epr-18521.5",  "mpr-16310.15",
+        "mpr-16311.16", "mpr-16312.14", "mpr-18510.20", "mpr-18511.24",
+        "mpr-18512.25", "mpr-18513.16", "mpr-18514.8",  "mpr-18515.9",
+        "mpr-18516.10", "mpr-18517.11", "mpr-18522.6",  "mpr-18523.7",
+        "mpr-18526.37", "mpr-18527.36", "mpr-18528.32", "mpr-18529.31",
+        "opr-14742a.45", "opr-14743a.46", "opr-14744.58", "opr-14745.59",
+        "opr-14746.62", "opr-14747.63"
     };
 
     private static final String[] SEGABILL_ROMS = {
@@ -54,17 +55,11 @@ public class GameFiles {
             return new ValidationResult(false, "vcop2.zip not found in Downloads folder (" + vcop2Zip.getParent() + "). Please place arcade ROM set there.");
         }
 
-        if (!segabillZip.exists()) {
-            return new ValidationResult(false, "segabill.zip not found in Downloads folder (" + segabillZip.getParent() + "). Please place Sega board ROM set there.");
-        }
-
         StringBuilder missing = new StringBuilder();
-
         checkZipEntries(vcop2Zip, VCOP2_ROMS, missing);
-        checkZipEntries(segabillZip, SEGABILL_ROMS, missing);
 
         if (missing.length() > 0) {
-            return new ValidationResult(false, "Missing ROM files inside zip sets:\n" + missing.toString());
+            return new ValidationResult(false, "Missing ROM files inside vcop2.zip:\n" + missing.toString());
         }
 
         return new ValidationResult(true, "ROM sets validated successfully.");
